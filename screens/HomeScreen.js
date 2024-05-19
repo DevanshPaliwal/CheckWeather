@@ -1,16 +1,40 @@
 import { View, Text, SafeAreaView, StatusBar, Image, TextInput, TouchableOpacity, ScrollView } from 'react-native'
-import React, { useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import { theme } from '../theme'
 import { MagnifyingGlassIcon } from 'react-native-heroicons/outline'
 import { CalendarDaysIcon, MapPinIcon } from 'react-native-heroicons/solid'
+import {debounce} from 'lodash'
+import { fetchForecast, fetchLocation } from '../api/weather'
 
 export default function HomeScreen() {
     const [showsearch, toggleSearch] = useState(false)
     const [location,setLocation]=useState([1,2,3])
 
+    // continue from here 28:00 timestamp
+
+
+
     const handleLocation=(loc)=>{
         console.log('location: ',loc)
+        setLocation([])
+        fetchForecast({
+            city:loc.name,
+            days:'3'
+        }).then(data=>{
+            console.log('got forecast: ',data)
+        })
     }
+
+    const handleSearch=value=>{
+        console.log('value: ',value)
+        if(value.length>2){
+            fetchLocation({city:value}).then(data=>{
+                setLocation(data)
+            })
+        }
+        
+    }
+    const handleTextDebounce=useCallback(debounce(handleSearch,1200),[])
 
     return (
         <View style={{ flex: 1, position: 'relative' }}>
@@ -24,7 +48,7 @@ export default function HomeScreen() {
                     <View className="flex-row justify-end items-center rounded-full"
                         style={{ backgroundColor: showsearch?theme.bgWhite(0.2):'transparent' }}>
                         {
-                            showsearch ? (<TextInput placeholder='Search City' placeholderTextColor={'lightgray'}
+                            showsearch ? (<TextInput placeholder='Search City' onChangeText={handleTextDebounce} placeholderTextColor={'lightgray'}
                                 className="pl-6 h-12 flex-1 text-base text-white"
                             />
                             ) : null
@@ -53,7 +77,7 @@ export default function HomeScreen() {
                                                 className={"flex-row items-center border-0 p-3 px-4 mb-1 "+borderClass}
                                                 >
                                                     <MapPinIcon size="20" color="gray" />
-                                                    <Text className="text-black text-lg ml-2" >London,UK</Text>
+                                                    <Text className="text-black text-lg ml-2" >{loc?.name},{loc?.country}</Text>
                                                 </TouchableOpacity>
                                             )
                                         })
