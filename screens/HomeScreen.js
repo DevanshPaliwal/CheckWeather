@@ -8,19 +8,21 @@ import { fetchForecast, fetchLocation } from '../api/weather'
 
 export default function HomeScreen() {
     const [showsearch, toggleSearch] = useState(false)
-    const [location,setLocation]=useState([1,2,3])
-
-    // continue from here 28:00 timestamp
+    const [locations,setLocation]=useState([1,2,3])
+    const [weather,setWeather]=useState({})
+    // continue from here 30:00 timestamp
 
 
 
     const handleLocation=(loc)=>{
         console.log('location: ',loc)
         setLocation([])
+        toggleSearch(false)
         fetchForecast({
             city:loc.name,
             days:'3'
         }).then(data=>{
+            setWeather(data)
             console.log('got forecast: ',data)
         })
     }
@@ -35,6 +37,8 @@ export default function HomeScreen() {
         
     }
     const handleTextDebounce=useCallback(debounce(handleSearch,1200),[])
+
+    const {current,location}=weather
 
     return (
         <View style={{ flex: 1, position: 'relative' }}>
@@ -64,11 +68,11 @@ export default function HomeScreen() {
                         </TouchableOpacity>
                         </View>
                             {
-                                location.length>0 && showsearch?(
+                                locations.length>0 && showsearch?(
                                   <View className="absolute w-full bg-gray-300 top-16 rounded-3xl">
                                     {
-                                        location.map((loc,index)=>{
-                                            let showBorder=index+1!=location.length
+                                        locations.map((loc,index)=>{
+                                            let showBorder=index+1!=locations.length
                                             let borderClass = showBorder? 'border-b-2 border-b-gray-400':''
                                             return(
                                                 <TouchableOpacity
@@ -91,21 +95,23 @@ export default function HomeScreen() {
                 <View className="mx-4 flex justify-around flex-1 mb-2">
                     {/* location */}
                     <Text className="text-white text-center text-2xl font-bold">
-                        London,
+                        {location?.name},
                         <Text className="text-lg font-semibold text-xl text-gray-300">
-                            United Kingdom
+                            {" "+location?.country}
                         </Text>
                     </Text>
                     {/* weather image */}
                     <View className="flex-row justify-center">
-                        <Image source={require('../assets/images/partlycloudy.png')}
+                        <Image 
+                        source={require('../assets/images/partlycloudy.png')}
+
                         className="w-52 h-52"
                         ></Image>
                     </View>
 
                     <View className="space-y-2" >
-                        <Text className="text-center font-bold text-white text-4xl ml-5">23&#176;</Text>
-                        <Text className="text-center  text-white text-xl tracking-widest">Partly Cloudy</Text>
+                        <Text className="text-center font-bold text-white text-4xl ml-5">{current?.temp_c}&#176;</Text>
+                        <Text className="text-center  text-white text-xl tracking-widest">{current?.condition?.text}</Text>
                     </View>
                     <View className="flex-row justify-between mx-4" >
                         <View className="flex-row space-x-2 items-center" >
