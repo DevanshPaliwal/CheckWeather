@@ -6,12 +6,15 @@ import { CalendarDaysIcon, MapPinIcon } from 'react-native-heroicons/solid'
 import { debounce } from 'lodash'
 import { fetchForecast, fetchLocation } from '../api/weather'
 import { weatherImages } from '../constants'
+import * as Progress from 'react-native-progress'
+import { getData, storeData } from '../utils/asyncStorage'
 
 export default function HomeScreen() {
     const [showsearch, toggleSearch] = useState(false)
     const [locations, setLocation] = useState([1, 2, 3])
     const [weather, setWeather] = useState({})
-    // continue from here 35:00 timestamp
+    const [loading,setLoading]=useState(true)
+    // completed
 
 
 
@@ -19,12 +22,15 @@ export default function HomeScreen() {
         console.log('location: ', loc)
         setLocation([])
         toggleSearch(false)
+        setLoading(true)
         fetchForecast({
             city: loc.name,
             days: '3'
         }).then(data => {
             setWeather(data)
-            console.log('got forecast: ', data)
+            setLoading(false)
+            // console.log('got forecast: ', data)
+            storeData('city',loc.name)
         })
     }
 
@@ -43,16 +49,24 @@ export default function HomeScreen() {
     },[])
 
     const fetchData=async()=>{
+        let mycity=await getData('city')
+        let cityname='Ajmer' // default city
+        if(mycity){
+            cityname=mycity
+        }
         fetchForecast({
-            city:'Ajmer',
+            city:cityname,
             days:'7'
         }).then(data=>{
             setWeather(data)
+            setLoading(false)
         })
     }
 
 
-
+    /* debounce is used to call the api only when complete 
+       cityname is written and reduce
+       useless api calls (after 1200 milliseconds) */
     const handleTextDebounce = useCallback(debounce(handleSearch, 1200), [])
 
     const { current, location } = weather
@@ -63,7 +77,13 @@ export default function HomeScreen() {
             <Image blurRadius={65} source={require('../assets/images/bg.png')}
                 className="absolute h-full w-full"
             />
-            <SafeAreaView className="flex flex-1">
+            {
+                loading?(
+                    <View className="flex-1 flex-row justify-center items-center">
+                        <Progress.CircleSnail thickness={10} size={140} color="#0bb3b2"/>
+                    </View>
+                ):(
+                    <SafeAreaView className="flex flex-1">
                 {/* search city */}
                 <View style={{ height: '7%' }} className="mx-4 relative z-50">
                     <View className="flex-row justify-end items-center rounded-full"
@@ -147,7 +167,7 @@ export default function HomeScreen() {
                             <Image source={require('../assets/icons/sun.png')}
                                 className="h-6 w-6"
                             ></Image>
-                            <Text className="text-white font-semibold text-base">Time</Text>
+                            <Text className="text-white font-semibold text-base">{weather?.forecast?.forecastday[0]?.astro.sunrise}</Text>
                         </View>
                     </View>
                 </View>
@@ -188,6 +208,9 @@ export default function HomeScreen() {
 
                 </View>
             </SafeAreaView>
+                )
+            }
+            
 
         </View>
     )
